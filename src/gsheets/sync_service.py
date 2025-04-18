@@ -3,6 +3,7 @@ import re
 from threading import Thread, Event
 import uuid
 from datetime import datetime
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +52,8 @@ class GSheetsSyncService:
                         self.sync_project(project_id)
                     except Exception as e:
                         logger.error(f"Error syncing project {project_id}: {str(e)}", exc_info=True)
+                    finally:
+                        time.sleep(2.5)
             except Exception as e:
                 logger.error(f"Error in sync loop: {str(e)}", exc_info=True)
 
