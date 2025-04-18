@@ -195,24 +195,100 @@ def register_project_handlers(bot, storage, gsheets):
     @bot.message_handler(commands=['projects'])
     def list_projects(message):
         user_id = message.from_user.id
-        logger.info(f"User {user_id} requested project list")
-
-        user_projects = storage.get_user_projects(user_id)
-
-        if not user_projects:
-            logger.info(f"No projects found for user {user_id}")
-            bot.send_message(message.chat.id,
-                             "У вас нет добавленных проектов. Используйте /add_project для добавления.")
+        username = message.from_user.username
+        if not validate_username(bot, message.chat.id, username):
             return
 
-        response = "Ваши проекты:\n\n"
+        projects = storage.get_user_projects(user_id)
+        if not projects:
+            bot.send_message(
+                message.chat.id,
+                "У вас нет добавленных проектов. Используйте /add_project для добавления."
+            )
+            return
 
-        for index, project in enumerate(user_projects, 1):
-            project_name = project.get("project_name", f"Проект {index}")
+        if len(projects) > 1:
+            markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+            for proj in projects:
+                name = proj.get("project_name", proj["project_id"][:8])
+                short_id = proj["project_id"][:8]
+                role = "👑" if proj.get("role") == "manager" else "👤"
+                markup.add(telebot.types.InlineKeyboardButton(
+                    f"{role} {name}",
+                    callback_data=f"projects_sel_{short_id}"
+                ))
+            bot.send_message(
+                message.chat.id,
+                "Выберите проект:",
+                reply_markup=markup
+            )
+        else:
+            show_project_menu(message.chat.id, projects[0])
 
-            role_text = "👑 Руководитель" if project.get("role") == "manager" else "👤 Участник"
-            response += f"{index}. {project_name} ({role_text})\n"
-            response += f"   ID: `{project['project_id']}`\n\n"
+    @bot.callback_query_handler(func=lambda call: call.data.startswith('projects_sel_'))
+    def project_select_callback(call):
+        user_id = call.from_user.id
+        short_id = call.data.split('_', 2)[2]
+        projects = storage.get_user_projects(user_id)
+        project = next((p for p in projects if p["project_id"].startswith(short_id)), None)
+        if not project:
+            bot.answer_callback_query(call.id, "Проект не найден")
+            return
 
-        bot.send_message(message.chat.id, response)
-        logger.info(f"Sent project list to user {user_id}")
+        show_project_menu(call.message.chat.id, project, call.message.message_id)
+        bot.answer_callback_query(call.id)
+
+    def show_project_menu(chat_id, project, message_id=None):
+        name = project.get("project_name", project["project_id"][:8])
+        role = "Руководитель" if project.get("role") == "manager" else "Участник"
+        text = f"📂 {name}\nРоль: {role}\nID: {project['project_id']}"
+
+        short_id = project["project_id"][:8]
+        markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+        markup.add(telebot.types.InlineKeyboardButton(
+            "📊 Список задач",
+            callback_data=f"tasks_{short_id}"
+        ))
+        markup.add(telebot.types.InlineKeyboardButton(
+            "⬅️ Назад к проектам",
+            callback_data="projects_back"
+        ))
+
+        if message_id:
+            bot.edit_message_text(
+                text, chat_id, message_id, reply_markup=markup
+            )
+        else:
+            bot.send_message(
+                chat_id, text, reply_markup=markup
+            )
+
+    @bot.callback_query_handler(func=lambda call: call.data == 'projects_back')
+    def projects_back_callback(call):
+        user_id = call.from_user.id
+        chat_id = call.message.chat.id
+        message_id = call.message.message_id
+
+        projects = storage.get_user_projects(user_id)
+        if not projects:
+            bot.edit_message_text(
+                "У вас нет добавленных проектов. Используйте /add_project для добавления.",
+                chat_id, message_id
+            )
+            return
+
+        markup = telebot.types.InlineKeyboardMarkup(row_width=1)
+        for proj in projects:
+            name = proj.get("project_name", proj["project_id"][:8])
+            short_id = proj["project_id"][:8]
+            role = "👑" if proj.get("role") == "manager" else "👤"
+            markup.add(telebot.types.InlineKeyboardButton(
+                f"{role} {name}",
+                callback_data=f"projects_sel_{short_id}"
+            ))
+
+        bot.edit_message_text(
+            "Выберите проект:",
+            chat_id, message_id, reply_markup=markup
+        )
+        bot.answer_callback_query(call.id)

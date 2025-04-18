@@ -17,6 +17,14 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 def setup_bot_handlers(storage, gsheets):
     bot = telebot.TeleBot(BOT_TOKEN)
 
+    bot.set_my_commands([
+        telebot.types.BotCommand("/start", "Перезапуск бота"),
+        telebot.types.BotCommand("/help", "Справка"),
+        telebot.types.BotCommand("/add_project", "Новый проект"),
+        telebot.types.BotCommand("/projects", "Список проектов"),
+        telebot.types.BotCommand("/tasks", "Список задач"),
+    ])
+
     register_project_handlers(bot, storage, gsheets)
     register_task_handlers(bot, storage, gsheets)
     register_reminder_handlers(bot, storage)
