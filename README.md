@@ -12,8 +12,8 @@
 1. Установить зависимости: `pip install -r requirements.txt`
 2. Добавить файл `.env`, содержащий токен бота и путь к учетным данным Google Service Account:
    ```
-   BOT_TOKEN='bot_token'
-   GOOGLE_CREDENTIALS_PATH='path/to/credentials.json'
+   BOT_TOKEN=bot_token
+   CREDENTIALS_FILE=path/to/credentials.json
    ``` 
 3. Запустить бота: `python3 src/main.py`
 
