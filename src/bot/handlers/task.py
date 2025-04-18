@@ -361,4 +361,3 @@ def show_project_tasks(chat_id, project, user_id, bot, storage, edit_message_id=
         bot.edit_message_text(response, chat_id, edit_message_id, reply_markup=markup)
     else:
         bot.send_message(chat_id, response, reply_markup=markup)
-

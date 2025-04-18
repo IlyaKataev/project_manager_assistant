@@ -11,6 +11,7 @@ def test_save_and_get_user_data(test_storage):
     assert retrieved["username"] == "test_user"
     assert retrieved["user_id"] == "123456"
 
+
 def test_add_user_to_project(test_storage):
     project_data = {
         "project_id": "test_project",
@@ -31,6 +32,7 @@ def test_add_user_to_project(test_storage):
     user_data = test_storage.get_user_data("123456")
     assert len(user_data["projects"]) == 1
     assert user_data["projects"][0]["project_id"] == "test_project"
+
 
 def test_get_user_projects(test_storage):
     user_id = "123456"
@@ -55,6 +57,7 @@ def test_get_user_projects(test_storage):
     assert projects[0]["project_id"] == "test_project"
     assert projects[0]["google_sheets_id"] == "gs123"
     assert projects[0]["role"] == "owner"
+
 
 def test_user_with_multiple_projects(test_storage):
     user_id = "123456"
@@ -86,6 +89,7 @@ def test_user_with_multiple_projects(test_storage):
 
     assert len(user_projects) == 2
     assert {p["project_id"] for p in user_projects} == {"project1", "project2"}
+
 
 def test_get_project(test_storage):
     project_data = {
